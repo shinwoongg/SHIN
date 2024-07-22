@@ -1,0 +1,52 @@
+import pandas as pd
+import numpy as np
+
+# Load the RNA-Seq read count data from a CSV file
+# Your_RNAseq_RC.csv will be a excel csv file.  
+# Each raw will contain gene id (first column, name of first column in nthis script is geneid) and Read counts of each RNA-Seq experimenrt (C1 to Cn, T1 to Tn).
+# C1 (first control), Cn (last control), T1 (first treatment), Tn (last treatment)
+df = pd.read_csv("Your_RNAseq_RC.csv")
+
+# Function to find the 10 candidate index genes for a given target gene (identified by idx)
+def tencand(idx):
+    # Extract control data for the target gene
+    target_cdata = df.loc[idx, 'C1':'Cn']
+    
+    # Calculate the normalized division (ndiv) values for each gene
+    ndiv = lambda x: np.std(target_cdata / x['C1':'Cn'], ddof=1) / np.mean(target_cdata / x['C1':'Cn'])
+    ndivdf = df.apply(ndiv, axis=1)
+    ndivdf = pd.DataFrame(ndivdf, columns=['ndiv'])
+    
+    # Extract data for both control and treatment samples for the target gene
+    target2_data = df.loc[idx, 'C1':'Tn']
+    
+    # Normalize the data
+    dataN = lambda x: target2_data / x['C1':'Tn']
+    dataNdf = df.apply(dataN, axis=1)
+    
+    # Generate IDs for the gene pairs
+    target3_data = df.loc[idx, 'geneid']
+    dataID = lambda x: str(target3_data) + '/' + str(x['geneid'])
+    IDdf = df.apply(dataID, axis=1)
+    IDdf = pd.DataFrame(IDdf, columns=['ID'])
+    
+    # Merge the ID and ndiv dataframes
+    m1df = pd.merge(IDdf, ndivdf, left_index=True, right_index=True)
+    mdf = pd.merge(m1df, dataNdf, left_index=True, right_index=True)
+    
+    # Sort the merged dataframe by ndiv values
+    mdf = mdf.sort_values(by=['ndiv'], axis=0)
+    
+    # Return the top 10 candidates excluding the target gene itself
+    return mdf[1:11]
+
+# Apply the tencand function to the first 10,000 genes and concatenate the results
+# testrun with range(100) and then use less range dependent on your computing power.
+# If you used multiple ranges for each script excution, then Your_DiRT.csv will be Your_DiRT1.csv to Your_DiRTn.CSV.
+df_C = pd.concat([tencand(i) for i in range(10000)], axis=0, ignore_index=True)
+
+# Save the concatenated results to a CSV file
+df_C.to_csv('Your_DiRT.csv', index=False)
+
+# Display the resulting dataframe (optional)
+df_C
