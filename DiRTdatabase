@@ -3,7 +3,7 @@ import numpy as np
 
 # Load the RNA-Seq read count data from a CSV file
 # Your_RNAseq_RC.csv will be a excel csv file.  
-# Each raw will contain gene id (first column, name of first column in nthis script is geneid) and Read counts of each RNA-Seq experiment (C1 to Cn, T1 to Tn).
+# Each raw will contain gene id (first column, name of first column in this script is geneid) and Read count of each RNA-Seq experiment (C1 to Cn, T1 to Tn).
 # C1 (first control), Cn (last control), T1 (first treatment), Tn (last treatment)
 df = pd.read_csv("Your_RNAseq_RC.csv")
 
@@ -12,7 +12,7 @@ def tencand(idx):
     # Extract control data for the target gene
     target_cdata = df.loc[idx, 'C1':'Cn']
     
-    # Calculate the normalized standard deviation (NSD) values for each gene
+    # Calculate the normalized standard deviation (NSD) values
     ndiv = lambda x: np.std(target_cdata / x['C1':'Cn'], ddof=1) / np.mean(target_cdata / x['C1':'Cn'])
     ndivdf = df.apply(ndiv, axis=1)
     ndivdf = pd.DataFrame(ndivdf, columns=['ndiv'])
